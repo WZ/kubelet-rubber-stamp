@@ -1,0 +1,7 @@
+apiVersion: v1
+appVersion: "1.0"
+description: A Helm chart for Kubernetes
+name: kubelet-rubber-stamp
+version: 0.1.0
+sources:
+- https://github.com/kontena/kubelet-rubber-stamp

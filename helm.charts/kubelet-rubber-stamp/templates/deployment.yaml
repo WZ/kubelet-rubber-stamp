@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubelet-rubber-stamp.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "kubelet-rubber-stamp.name" . }}
+    helm.sh/chart: {{ include "kubelet-rubber-stamp.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kubelet-rubber-stamp.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "kubelet-rubber-stamp.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+{{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "kubelet-rubber-stamp.fullname" . }}
+{{- end }}
+      priorityClassName: system-cluster-critical
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: WATCH_NAMESPACE
+              value: {{ .Values.watchNamespace }}
+            - name: WATCH_CSR_ORG
+              value: {{ .Values.watchCSROrg }}  
+            - name: WATCH_CSR_COMMON_NAME
+              value: {{ .Values.watchCSRCommonName }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: {{ include "kubelet-rubber-stamp.fullname" . }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
